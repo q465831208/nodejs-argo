@@ -6,23 +6,36 @@ const fs = require("fs");
 const path = require("path");
 const { promisify } = require('util');
 const exec = promisify(require('child_process').exec);
-const { execSync } = require('child_process');        // 只填写UPLOAD_URL将上传节点,同时填写UPLOAD_URL和PROJECT_URL将上传订阅
-const UPLOAD_URL = process.env.UPLOAD_URL || '';      // 节点或订阅自动上传地址,需填写部署Merge-sub项目后的首页地址,例如：https://merge.xxx.com
-const PROJECT_URL = process.env.PROJECT_URL || '';    // 需要上传订阅或保活时需填写项目分配的url,例如：https://google.com
-const AUTO_ACCESS = process.env.AUTO_ACCESS || false; // false关闭自动保活，true开启,需同时填写PROJECT_URL变量
-const FILE_PATH = process.env.FILE_PATH || './tmp';   // 运行目录,sub节点文件保存目录
-const SUB_PATH = process.env.SUB_PATH || 'sub';       // 订阅路径
-const PORT = process.env.SERVER_PORT || process.env.PORT || 3000;        // http服务订阅端口
-const UUID = process.env.UUID || '9afd1229-b893-40c1-84dd-51e7ce204913'; // 使用哪吒v1,在不同的平台运行需修改UUID,否则会覆盖
-const NEZHA_SERVER = process.env.NEZHA_SERVER || '';        // 哪吒v1填写形式: nz.abc.com:8008  哪吒v0填写形式：nz.abc.com
-const NEZHA_PORT = process.env.NEZHA_PORT || '';            // 使用哪吒v1请留空，哪吒v0需填写
-const NEZHA_KEY = process.env.NEZHA_KEY || '';              // 哪吒v1的NZ_CLIENT_SECRET或哪吒v0的agent密钥
-const ARGO_DOMAIN = process.env.ARGO_DOMAIN || '';          // 固定隧道域名,留空即启用临时隧道
-const ARGO_AUTH = process.env.ARGO_AUTH || '';              // 固定隧道密钥json或token,留空即启用临时隧道,json获取地址：https://json.zone.id
-const ARGO_PORT = process.env.ARGO_PORT || 8001;            // 固定隧道端口,使用token需在cloudflare后台设置和这里一致
-const CFIP = process.env.CFIP || 'cdns.doon.eu.org';        // 节点优选域名或优选ip  
-const CFPORT = process.env.CFPORT || 443;                   // 节点优选域名或优选ip对应的端口
-const NAME = process.env.NAME || '';                        // 节点名称
+const { execSync } = require('child_process');
+
+// ----------------------------------------------------------------------------------------------------
+// 环境变量配置区
+// ----------------------------------------------------------------------------------------------------
+
+// 只填写UPLOAD_URL将上传节点,同时填写UPLOAD_URL和PROJECT_URL将上传订阅
+const UPLOAD_URL = process.env.UPLOAD_URL || '';        // 节点或订阅自动上传地址,需填写部署Merge-sub项目后的首页地址
+const PROJECT_URL = process.env.PROJECT_URL || '';      // 需要上传订阅或保活时需填写项目分配的url
+const AUTO_ACCESS = process.env.AUTO_ACCESS === 'true' || false; // false关闭自动保活，true开启
+const FILE_PATH = process.env.FILE_PATH || './tmp';     // 运行目录,sub节点文件保存目录
+const SUB_PATH = process.env.SUB_PATH || '123';         // 订阅路径
+const PORT = process.env.SERVER_PORT || process.env.PORT || 3000;         // http服务订阅端口
+const UUID = process.env.UUID || 'aa512b6d-a9ac-4327-8090-6f3569f8c8bf'; // UUID
+const NEZHA_SERVER = process.env.NEZHA_SERVER || 'nezha.ylm52.dpdns.org:443'; // 哪吒服务器地址
+const NEZHA_PORT = process.env.NEZHA_PORT || '';             // 使用哪吒v1请留空，哪吒v0需填写
+const NEZHA_KEY = process.env.NEZHA_KEY || 'ricZCX8ODNyN0X4UlSRSnZ9l92zn4UDB';                // 哪吒密钥
+const ARGO_DOMAIN = process.env.ARGO_DOMAIN || 'pl.oocoo.ggff.net';            // 固定隧道域名
+const ARGO_AUTH = process.env.ARGO_AUTH || 'eyJhIjoiYTIyMGI2MDFlMmJlYWE0ODQzNWRkZjAyMjllYjg1YmUiLCJ0IjoiODczMDQ4YzItODJlZC00MDUxLWE2MjUtMWVlMGVhMzBjNWNmIiwicyI6Ik5UTTVNV1U1WWpJdE9ETXhNQzAwTW1VeUxXRmhaVEF0TTJVM01qWmlObVF5TURjMiJ9';                // 固定隧道密钥
+const ARGO_PORT = process.env.ARGO_PORT || 8001;             // 固定隧道端口
+const CFIP = process.env.CFIP || 'cf.877774.xyz';         // 节点优选域名或优选ip 
+const CFPORT = process.env.CFPORT || 443;                     // 节点优选域名或优选ip对应的端口
+const NAME = process.env.NAME || 'pluox';                          // 节点名称
+const XIEYI = process.env.XIEYI || '2';                          // 协议选择
+const CHAT_ID = process.env.CHAT_ID || '2117746804';                     // Telegram chat_id
+const BOT_TOKEN = process.env.BOT_TOKEN || '5279043230:AAFI4qfyo0oP7HJ-39jLqjqq9Wh6OeWrTjw';                 // Telegram bot_token
+
+// ----------------------------------------------------------------------------------------------------
+// 初始化与工具函数
+// ----------------------------------------------------------------------------------------------------
 
 // 创建运行文件夹
 if (!fs.existsSync(FILE_PATH)) {
@@ -57,7 +70,7 @@ let bootLogPath = path.join(FILE_PATH, 'boot.log');
 let configPath = path.join(FILE_PATH, 'config.json');
 
 // 如果订阅器上存在历史运行节点则先删除
-function deleteNodes() {
+async function deleteNodes() {
   try {
     if (!UPLOAD_URL) return;
     if (!fs.existsSync(subPath)) return;
@@ -66,25 +79,27 @@ function deleteNodes() {
     try {
       fileContent = fs.readFileSync(subPath, 'utf-8');
     } catch {
-      return null;
+      return;
     }
 
     const decoded = Buffer.from(fileContent, 'base64').toString('utf-8');
     const nodes = decoded.split('\n').filter(line => 
-      /(vless|vmess|trojan|hysteria2|tuic):\/\//.test(line)
+      /(vless|vmess|trojan|hysteria2|tuic):\/\//.test(line.trim())
     );
 
     if (nodes.length === 0) return;
 
-    axios.post(`${UPLOAD_URL}/api/delete-nodes`, 
-      JSON.stringify({ nodes }),
-      { headers: { 'Content-Type': 'application/json' } }
-    ).catch((error) => { 
-      return null; 
-    });
-    return null;
+    try {
+      await axios.post(`${UPLOAD_URL}/api/delete-nodes`, 
+        { nodes },
+        { headers: { 'Content-Type': 'application/json' } }
+      );
+      console.log(`Deleted ${nodes.length} nodes from server`);
+    } catch (error) {
+      console.warn('Failed to delete nodes:', error.message);
+    }
   } catch (err) {
-    return null;
+    console.error('Error in deleteNodes:', err.message);
   }
 }
 
@@ -100,18 +115,215 @@ function cleanupOldFiles() {
           fs.unlinkSync(filePath);
         }
       } catch (err) {
-        // 忽略所有错误，不记录日志
+        // 忽略所有错误
       }
     });
   } catch (err) {
-    // 忽略所有错误，不记录日志
+    // 忽略所有错误
   }
 }
 
-// 根路由
+// ----------------------------------------------------------------------------------------------------
+// 路由设置 (含伪装页面)
+// ----------------------------------------------------------------------------------------------------
+
+// 根路由 - 伪装成在线学习平台页面
 app.get("/", function(req, res) {
-  res.send("Hello world!");
+  const html = `
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>知识云课堂 - 在线学习平台</title>
+    <style>
+        /* 全局样式设置 */
+        body {
+            font-family: 'PingFang SC', 'Microsoft YaHei', sans-serif;
+            background-color: #f5f8ff; /* 极浅的蓝色背景 */
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            color: #333;
+        }
+
+        /* 顶部标题样式 */
+        .header-title {
+            font-size: 24px;
+            font-weight: bold;
+            color: #555;
+            margin-bottom: 30px;
+            text-align: center;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        /* 大横幅/Slogan区域样式 */
+        .banner {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 20px;
+            padding: 40px;
+            text-align: center;
+            max-width: 800px;
+            width: 90%;
+            margin-bottom: 50px;
+            box-shadow: 0 4px 20px rgba(102, 126, 234, 0.3);
+        }
+
+        .banner h1 {
+            color: #ffffff;
+            margin: 0 0 15px 0;
+            font-size: 32px;
+            letter-spacing: 1px;
+        }
+
+        .banner p {
+            color: #f0f0f0;
+            margin: 0;
+            font-size: 18px;
+        }
+
+        /* 卡片网格容器样式 */
+        .grid-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+            gap: 25px;
+            max-width: 1000px;
+            width: 95%;
+            justify-content: center;
+        }
+
+        /* 单个卡片样式 */
+        .card {
+            background-color: #ffffff;
+            border-radius: 15px;
+            padding: 25px 20px;
+            text-align: center;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            border: 1px solid #e8ecf4;
+        }
+
+        /* 鼠标悬停效果 */
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 20px rgba(102, 126, 234, 0.2);
+            border-color: #667eea;
+        }
+
+        /* 图标样式 */
+        .icon {
+            font-size: 48px;
+            margin-bottom: 15px;
+            display: inline-block;
+        }
+
+        /* 卡片标题样式 */
+        .card h3 {
+            color: #667eea;
+            margin: 10px 0;
+            font-size: 18px;
+            font-weight: bold;
+        }
+
+        /* 卡片描述文字样式 */
+        .card p {
+            color: #777;
+            font-size: 14px;
+            line-height: 1.6;
+            margin: 0;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="header-title">
+        <span style="font-size: 32px;">📚</span>
+        知识云课堂 - 让学习更简单
+        <span style="font-size: 32px;">🎓</span>
+    </div>
+
+    <div class="banner">
+        <h1>探索知识的海洋，成就更好的自己</h1>
+        <p>海量优质课程，随时随地在线学习</p>
+    </div>
+
+    <div class="grid-container">
+        <div class="card">
+            <div class="icon">💻</div>
+            <h3>编程开发</h3>
+            <p>Python、Java、前端等热门技术课程</p>
+        </div>
+        <div class="card">
+            <div class="icon">🎨</div>
+            <h3>设计创意</h3>
+            <p>UI设计、平面设计、视频剪辑</p>
+        </div>
+        <div class="card">
+            <div class="icon">🌐</div>
+            <h3>语言学习</h3>
+            <p>英语、日语、法语等多语种课程</p>
+        </div>
+        <div class="card">
+            <div class="icon">📊</div>
+            <h3>数据分析</h3>
+            <p>大数据、数据可视化、AI应用</p>
+        </div>
+        <div class="card">
+            <div class="icon">📱</div>
+            <h3>移动开发</h3>
+            <p>iOS、Android、跨平台开发</p>
+        </div>
+        <div class="card">
+            <div class="icon">💼</div>
+            <h3>职场技能</h3>
+            <p>办公软件、项目管理、沟通技巧</p>
+        </div>
+        <div class="card">
+            <div class="icon">🎯</div>
+            <h3>考试培训</h3>
+            <p>考研、公务员、职业资格证书</p>
+        </div>
+        <div class="card">
+            <div class="icon">🎬</div>
+            <h3>影视制作</h3>
+            <p>摄影、后期、特效制作</p>
+        </div>
+        <div class="card">
+            <div class="icon">📈</div>
+            <h3>市场营销</h3>
+            <p>新媒体运营、电商、品牌策划</p>
+        </div>
+        <div class="card">
+            <div class="icon">🎵</div>
+            <h3>音乐艺术</h3>
+            <p>乐器、声乐、音乐制作</p>
+        </div>
+        <div class="card">
+            <div class="icon">🏋️</div>
+            <h3>健康运动</h3>
+            <p>健身、瑜伽、营养学</p>
+        </div>
+        <div class="card">
+            <div class="icon">🧠</div>
+            <h3>兴趣爱好</h3>
+            <p>摄影、绘画、手工制作</p>
+        </div>
+    </div>
+
+</body>
+</html>
+  `;
+  res.set('Content-Type', 'text/html; charset=utf-8');
+  res.send(html);
 });
+
+// ----------------------------------------------------------------------------------------------------
+// 核心逻辑功能
+// ----------------------------------------------------------------------------------------------------
 
 // 生成xr-ay配置文件
 async function generateConfig() {
@@ -168,19 +380,19 @@ function downloadFile(fileName, fileUrl, callback) {
       writer.on('error', err => {
         fs.unlink(filePath, () => { });
         const errorMessage = `Download ${path.basename(filePath)} failed: ${err.message}`;
-        console.error(errorMessage); // 下载失败时输出错误消息
+        console.error(errorMessage);
         callback(errorMessage);
       });
     })
     .catch(err => {
       const errorMessage = `Download ${path.basename(filePath)} failed: ${err.message}`;
-      console.error(errorMessage); // 下载失败时输出错误消息
+      console.error(errorMessage); 
       callback(errorMessage);
     });
 }
 
 // 下载并运行依赖文件
-async function downloadFilesAndRun() {  
+async function downloadFilesAndRun() { 
   
   const architecture = getSystemArchitecture();
   const filesToDownload = getFilesForArchitecture(architecture);
@@ -257,7 +469,7 @@ uuid: ${UUID}`;
       
       fs.writeFileSync(path.join(FILE_PATH, 'config.yaml'), configYaml);
       
-      // 运行 php
+      // 运行 v1
       const command = `nohup ${phpPath} -c "${FILE_PATH}/config.yaml" >/dev/null 2>&1 &`;
       try {
         await exec(command);
@@ -369,7 +581,7 @@ function argoType() {
   tunnel: ${ARGO_AUTH.split('"')[11]}
   credentials-file: ${path.join(FILE_PATH, 'tunnel.json')}
   protocol: http2
-  
+   
   ingress:
     - hostname: ${ARGO_DOMAIN}
       service: http://localhost:${ARGO_PORT}
@@ -413,19 +625,12 @@ async function extractDomains() {
         console.log('ArgoDomain not found, re-running bot to obtain ArgoDomain');
         // 删除 boot.log 文件，等待 2s 重新运行 server 以获取 ArgoDomain
         fs.unlinkSync(path.join(FILE_PATH, 'boot.log'));
-        async function killBotProcess() {
-          try {
-            // Windows系统使用taskkill命令
-            if (process.platform === 'win32') {
-              await exec(`taskkill /f /im ${botName}.exe > nul 2>&1`);
-            } else {
-              await exec(`pkill -f "[${botName.charAt(0)}]${botName.substring(1)}" > /dev/null 2>&1`);
-            }
-          } catch (error) {
-            // 忽略输出
-          }
+        // 停止 bot 进程
+        try {
+          await exec(`pkill -f "${botName}" > /dev/null 2>&1`);
+        } catch (error) {
+          // 忽略输出
         }
-        killBotProcess();
         await new Promise((resolve) => setTimeout(resolve, 3000));
         const args = `tunnel --edge-ip-version auto --no-autoupdate --protocol http2 --logfile ${FILE_PATH}/boot.log --loglevel info --url http://localhost:${ARGO_PORT}`;
         try {
@@ -441,41 +646,149 @@ async function extractDomains() {
       console.error('Error reading boot.log:', error);
     }
   }
+}
 
-  // 生成 list 和 sub 信息
-  async function generateLinks(argoDomain) {
+
+// 国家代码到国旗 Emoji 的映射函数
+function getFlagEmoji(countryCode) {
+    if (!countryCode) return '';
+    // 将国家代码转换为 Unicode 标量
+    const base = 0x1F1E6; // '🇦' 的基数
+    const codePoints = countryCode.toUpperCase().split('').map(char => base + char.charCodeAt(0) - 'A'.charCodeAt(0));
+    try {
+        // 使用 String.fromCodePoint 组合出国旗 Emoji
+        return String.fromCodePoint(...codePoints);
+    } catch (e) {
+        // 捕获可能的错误，如国旗代码不存在
+        return '';
+    }
+}
+
+
+async function generateLinks(argoDomain) {
+    // 城市名称到国家/地区二位代码的映射表 (ISO 3166-1 alpha-2)
+    function getAbbreviation(location) {
+        const map = {
+            'Singapore': 'SG', 'Hong_Kong': 'HK', 'Taipei': 'TW', 'Tokyo': 'JP', 'Osaka': 'JP', 'Seoul': 'KR', 
+            'Jakarta': 'ID', 'Kuala_Lumpur': 'MY', 'Manila': 'PH', 'Mumbai': 'IN', 'Delhi': 'IN', 'Bangkok': 'TH',
+            'Hanoi': 'VN', 'Ho_Chi_Minh_City': 'VN', 'Ashburn': 'US', 'Chicago': 'US', 'Dallas': 'US', 
+            'Los_Angeles': 'US', 'San_Jose': 'US', 'Seattle': 'US', 'Miami': 'US', 'Toronto': 'CA', 
+            'Montreal': 'CA', 'Frankfurt': 'DE', 'London': 'GB', 'Paris': 'FR', 'Amsterdam': 'NL', 
+            'Warsaw': 'PL', 'Madrid': 'ES', 'Milan': 'IT', 'Stockholm': 'SE', 'Zurich': 'CH', 
+            'Sydney': 'AU', 'Melbourne': 'AU', 'Auckland': 'NZ', 'Sao_Paulo': 'BR', 'Santiago': 'CL', 
+            'Bogota': 'CO', 'Dubai': 'AE', 'Johannesburg': 'ZA',
+        };
+        
+        const cleanedLocation = location.replace(/[\s_]/g, '');
+
+        for (const full in map) {
+            if (cleanedLocation.toLowerCase() === full.replace(/_/g, '').toLowerCase()) {
+                return map[full];
+            }
+        }
+        
+        return cleanedLocation.substring(0, 3).toUpperCase();
+    }
+    
+    // 提取城市名
     const metaInfo = execSync(
-      'curl -sm 5 https://speed.cloudflare.com/meta | awk -F\\" \'{print $26"-"$18}\' | sed -e \'s/ /_/g\'',
+      'curl -sm 5 https://speed.cloudflare.com/meta | awk -F\\" \'{print $26}\' | sed -e \'s/ /_/g\'',
       { encoding: 'utf-8' }
     );
     const ISP = metaInfo.trim();
-    // 如果 NAME 为空，则只使用 ISP 作为名称
-    const nodeName = NAME ? `${NAME}-${ISP}` : ISP;
+    const locationAbbreviation = getAbbreviation(ISP);
+    
+    // 获取国旗 Emoji 并构建 nodeName
+    const flagEmoji = getFlagEmoji(locationAbbreviation);
+    const baseNodeName = NAME ? `${NAME}-${locationAbbreviation}` : locationAbbreviation;
+    const nodeName = `${flagEmoji} ${baseNodeName}`.trim();
 
-    return new Promise((resolve) => {
-      setTimeout(() => {
+    return new Promise(async (resolve) => {
+      setTimeout(async () => {
         const VMESS = { v: '2', ps: `${nodeName}`, add: CFIP, port: CFPORT, id: UUID, aid: '0', scy: 'none', net: 'ws', type: 'none', host: argoDomain, path: '/vmess-argo?ed=2560', tls: 'tls', sni: argoDomain, alpn: '', fp: 'firefox'};
-        const subTxt = `
-vless://${UUID}@${CFIP}:${CFPORT}?encryption=none&security=tls&sni=${argoDomain}&fp=firefox&type=ws&host=${argoDomain}&path=%2Fvless-argo%3Fed%3D2560#${nodeName}
+        
+        let subTxt = '';
+        
+        // --- 协议选择逻辑 ---
+        if (XIEYI === '3') {
+          // 生成 VMESS, VLESS, TROJAN (三种)
+          subTxt = `
+vless://${UUID}@${CFIP}:${CFPORT}?encryption=none&security=tls&sni=${argoDomain}&fp=firefox&type=ws&host=${argoDomain}&path=%2Fvless-argo%3Fed%3D2560#${nodeName}-VLESS
   
 vmess://${Buffer.from(JSON.stringify(VMESS)).toString('base64')}
   
-trojan://${UUID}@${CFIP}:${CFPORT}?security=tls&sni=${argoDomain}&fp=firefox&type=ws&host=${argoDomain}&path=%2Ftrojan-argo%3Fed%3D2560#${nodeName}
+trojan://${UUID}@${CFIP}:${CFPORT}?security=tls&sni=${argoDomain}&fp=firefox&type=ws&host=${argoDomain}&path=%2Ftrojan-argo%3Fed%3D2560#${nodeName}-TROJAN
     `;
-        // 打印 sub.txt 内容到控制台
+        } else if (XIEYI === '2') {
+          // 生成 VMESS, VLESS (两种)
+          subTxt = `
+vless://${UUID}@${CFIP}:${CFPORT}?encryption=none&security=tls&sni=${argoDomain}&fp=firefox&type=ws&host=${argoDomain}&path=%2Fvless-argo%3Fed%3D2560#${nodeName}-VLESS
+  
+vmess://${Buffer.from(JSON.stringify(VMESS)).toString('base64')}
+    `;
+        } else {
+          // 默认只生成 VMESS (一种)
+          subTxt = `vmess://${Buffer.from(JSON.stringify(VMESS)).toString('base64')}`;
+        }
+        // --- 协议选择逻辑结束 ---
+
         console.log(Buffer.from(subTxt).toString('base64'));
         fs.writeFileSync(subPath, Buffer.from(subTxt).toString('base64'));
         console.log(`${FILE_PATH}/sub.txt saved successfully`);
-        uploadNodes();
-        // 将内容进行 base64 编码并写入 SUB_PATH 路由
-        app.get(`/${SUB_PATH}`, (req, res) => {
-          const encodedContent = Buffer.from(subTxt).toString('base64');
-          res.set('Content-Type', 'text/plain; charset=utf-8');
-          res.send(encodedContent);
-        });
+        
+        await uploadNodes();
+        await sendToTelegram(subTxt.trim(), nodeName);
+        
+        // 确保路由只被设置一次
+        if (!app._router.stack.some(layer => layer.route && layer.route.path === `/${SUB_PATH}`)) {
+           app.get(`/${SUB_PATH}`, (req, res) => {
+             const encodedContent = Buffer.from(subTxt).toString('base64');
+             res.set('Content-Type', 'text/plain; charset=utf-8');
+             res.send(encodedContent);
+           });
+        }
+        
         resolve(subTxt);
       }, 2000);
     });
+}
+
+// 推送节点到Telegram
+async function sendToTelegram(subTxt, nodeName) {
+  // 检查是否配置了 Telegram 参数
+  if (!CHAT_ID || !BOT_TOKEN) {
+    console.log('Telegram推送未配置：CHAT_ID 或 BOT_TOKEN 为空');
+    return;
+  }
+
+  try {
+    const telegramApiUrl = `https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`;
+    const message = `🔗 新节点已生成\n\n节点名称：${nodeName}\n\n订阅链接：\n\`\`\`\n${subTxt.trim()}\n\`\`\``;
+
+    const response = await axios.post(telegramApiUrl, {
+      chat_id: CHAT_ID,
+      text: message,
+      parse_mode: 'Markdown'
+    }, {
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    });
+
+    if (response && response.status === 200) {
+      console.log('节点已推送到Telegram');
+      return response;
+    } else {
+      console.warn('Telegram推送失败：未知响应状态');
+      return null;
+    }
+  } catch (error) {
+    if (error.response) {
+      console.error('Telegram推送失败:', error.response.data);
+    } else {
+      console.error('Telegram推送失败:', error.message);
+    }
+    return null;
   }
 }
 
@@ -497,8 +810,7 @@ async function uploadNodes() {
             console.log('Subscription uploaded successfully');
             return response;
         } else {
-          return null;
-          //  console.log('Unknown response status');
+            return null;
         }
     } catch (error) {
         if (error.response) {
@@ -535,10 +847,10 @@ async function uploadNodes() {
   }
 }
 
-// 90s后删除相关文件
+// 90s后删除相关文件 (兼容 Windows 和 Linux)
 function cleanFiles() {
   setTimeout(() => {
-    const filesToDelete = [bootLogPath, configPath, webPath, botPath];  
+    const filesToDelete = [bootLogPath, configPath, webPath, botPath];
     
     if (NEZHA_PORT) {
       filesToDelete.push(npmPath);
@@ -546,20 +858,29 @@ function cleanFiles() {
       filesToDelete.push(phpPath);
     }
 
-    // Windows系统使用不同的删除命令
-    if (process.platform === 'win32') {
-      exec(`del /f /q ${filesToDelete.join(' ')} > nul 2>&1`, (error) => {
-        console.clear();
-        console.log('App is running');
-        console.log('Thank you for using this script, enjoy!');
-      });
+    // 1. 获取当前操作系统平台
+    const platform = os.platform();
+    let command = '';
+
+    // 2. 根据系统生成对应的删除命令
+    if (platform === 'win32') {
+      // Windows 系统使用 del 命令
+      // /f: 强制删除只读文件, /q: 安静模式(不确认)
+      // Array.join(' ') 将路径数组拼接成字符串
+      command = `del /f /q "${filesToDelete.join('" "')}" >nul 2>&1`;
     } else {
-      exec(`rm -rf ${filesToDelete.join(' ')} >/dev/null 2>&1`, (error) => {
-        console.clear();
-        console.log('App is running');
-        console.log('Thank you for using this script, enjoy!');
-      });
+      // Linux/macOS 系统使用 rm 命令
+      command = `rm -f ${filesToDelete.join(' ')} >/dev/null 2>&1`;
     }
+
+    // 3. 执行删除
+    exec(command, (error) => {
+      // 无论是否报错，都清屏并显示成功信息
+      // (在 Windows 上 console.clear() 可能行为稍有不同，但通常有效)
+      console.clear();
+      console.log('App is running');
+      console.log('Thank you for using this script, enjoy!');
+    });
   }, 90000); // 90s
 }
 cleanFiles();
@@ -591,7 +912,7 @@ async function AddVisitTask() {
 // 主运行逻辑
 async function startserver() {
   try {
-    deleteNodes();
+    await deleteNodes(); // 确保删除节点操作完成
     cleanupOldFiles();
     await generateConfig();
     await downloadFilesAndRun();
