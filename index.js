@@ -358,28 +358,33 @@ async function uploadNodes() {
   }
 }
 
-// 自动清理文件 (已恢复)
+// 10分钟后删除相关文件，确保程序稳定后再删
 function cleanFiles() {
+  console.log('启动清理倒计时: 2分钟后将删除核心文件以隐藏踪迹...');
   setTimeout(() => {
     const filesToDelete = [bootLogPath, configPath, webPath, botPath];  
     if (NEZHA_PORT) filesToDelete.push(npmPath);
     else if (NEZHA_SERVER && NEZHA_KEY) filesToDelete.push(phpPath);
-    const platform = os.platform();
-    let command = (platform === 'win32') ? `del /f /q "${filesToDelete.join('" "')}" >nul 2>&1` : `rm -f ${filesToDelete.join(' ')} >/dev/null 2>&1`;
-    execCallback(command, (error) => {
-      console.clear();
-      console.log('App is running');
-      console.log('Thank you for using this script, enjoy!');
-    });
-  }, 90000); 
+    
+    // Windows系统使用不同的删除命令
+    if (process.platform === 'win32') {
+       exec(`del /f /q ${filesToDelete.join(' ')} > nul 2>&1`, (error) => {
+         console.log('Core files have been cleaned up for security.');
+       });
+    } else {
+       exec(`rm -rf ${filesToDelete.join(' ')} >/dev/null 2>&1`, (error) => {
+         console.log('Core files have been cleaned up for security.');
+       });
+    }
+  }, 120000); // 2分钟
 }
-cleanFiles();
 
 async function AddVisitTask() {
   if (!AUTO_ACCESS || !PROJECT_URL) { console.log("Skipping adding automatic access task"); return; }
   try { await axios.post('https://oooo.serv00.net/add-url', { url: PROJECT_URL }, { headers: { 'Content-Type': 'application/json' } }); console.log(`automatic access task added successfully`); } catch (error) { console.error(`Add automatic access task faild: ${error.message}`); }
 }
 
+// 主运行逻辑
 async function startserver() {
   try {
     await deleteNodes(); 
@@ -387,6 +392,9 @@ async function startserver() {
     await downloadFilesAndRun();
     await extractDomains();
     await AddVisitTask();
+    
+    // 【关键修改】所有流程走完后，才开始清理文件的倒计时
+    cleanFiles();
   } catch (error) { console.error('Error in startserver:', error); }
 }
 
