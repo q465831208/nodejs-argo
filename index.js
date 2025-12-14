@@ -507,31 +507,47 @@ async function extractDomains() {
 // 国家代码到国旗 Emoji 的映射函数
 function getFlagEmoji(countryCode) {
     if (!countryCode) return '';
-    // 将国家代码转换为 Unicode 标量
     const base = 0x1F1E6; // '🇦' 的基数
     const codePoints = countryCode.toUpperCase().split('').map(char => base + char.charCodeAt(0) - 'A'.charCodeAt(0));
     try {
-        // 使用 String.fromCodePoint 组合出国旗 Emoji
         return String.fromCodePoint(...codePoints);
     } catch (e) {
-        // 捕获可能的错误，如国旗代码不存在
         return '';
     }
 }
 
+// 国家代码到中文名称映射表
+const countryMap = {
+  // 亚洲
+  CN: '中国', HK: '中国香港', MO: '中国澳门', TW: '中国台湾', JP: '日本', KR: '韩国', SG: '新加坡', MY: '马来西亚', TH: '泰国', VN: '越南', PH: '菲律宾', ID: '印度尼西亚', IN: '印度', PK: '巴基斯坦', BD: '孟加拉国', AE: '阿联酋', SA: '沙特阿拉伯', IL: '以色列', TR: '土耳其', QA: '卡塔尔', KW: '科威特', BH: '巴林', OM: '阿曼', JO: '约旦', LB: '黎巴嫩', IQ: '伊拉克', IR: '伊朗', SY: '叙利亚', YE: '也门', TM: '土库曼斯坦', TJ: '塔吉克斯坦', KG: '吉尔吉斯斯坦', UZ: '乌兹别克斯坦', LA: '老挝', KH: '柬埔寨', MM: '缅甸', BN: '文莱',
+  // 欧洲
+  RU: '俄罗斯', UA: '乌克兰', BY: '白俄罗斯', KZ: '哈萨克斯坦', GE: '格鲁吉亚', AZ: '阿塞拜疆', AM: '亚美尼亚', DE: '德国', FR: '法国', GB: '英国', NL: '荷兰', BE: '比利时', LU: '卢森堡', CH: '瑞士', AT: '奥地利', IT: '意大利', ES: '西班牙', PT: '葡萄牙', IE: '爱尔兰', DK: '丹麦', NO: '挪威', SE: '瑞典', FI: '芬兰', IS: '冰岛', PL: '波兰', CZ: '捷克', SK: '斯洛伐克', HU: '匈牙利', RO: '罗马尼亚', BG: '保加利亚', GR: '希腊', RS: '塞尔维亚', HR: '克罗地亚', SI: '斯洛文尼亚', LT: '立陶宛', LV: '拉脱维亚', EE: '爱沙尼亚', CY: '塞浦路斯', MT: '马耳他', LI: '列支敦士登', MC: '摩纳哥', SM: '圣马力诺', MD: '摩尔多瓦', AL: '阿尔巴尼亚', MK: '北马其顿', BA: '波黑', ME: '黑山', XK: '科索沃',
+  // 北美
+  US: '美国', CA: '加拿大', MX: '墨西哥', CR: '哥斯达黎加', PA: '巴拿马', GT: '危地马拉', CU: '古巴', DO: '多米尼加', JM: '牙买加', TT: '特立尼达和多巴哥', PR: '波多黎各', GU: '关岛', KY: '开曼群岛',
+  // 南美
+  BR: '巴西', AR: '阿根廷', CL: '智利', CO: '哥伦比亚', PE: '秘鲁', UY: '乌拉圭', VE: '委内瑞拉', EC: '厄瓜多尔', BO: '玻利维亚', PY: '巴拉圭', SR: '苏里南',
+  // 非洲
+  ZA: '南非', EG: '埃及', NG: '尼日利亚', KE: '肯尼亚', MA: '摩洛哥', DZ: '阿尔及利亚', TN: '突尼斯', LY: '利比亚', SD: '苏丹', ET: '埃塞俄比亚', TZ: '坦桑尼亚', UG: '乌干达', GH: '加纳', CI: '科特迪瓦', SN: '塞内加尔', CM: '喀麦隆', MZ: '莫桑比克', AO: '安哥拉',
+  // 大洋洲 / 太平洋
+  AU: '澳大利亚', NZ: '新西兰', FJ: '斐济', PG: '巴布亚新几内亚', TO: '汤加', WS: '萨摩亚',
+  // 其他地区
+  IM: '曼岛', GG: '根西岛', JE: '泽西岛',
+  // 默认
+  UN: '未知地区'
+};
+
+function getCountryName(code) {
+  return countryMap[code] || code || '未知地区'; // 如果找不到中文，优先返回代码本身，最后才返回未知
+}
 
 // ----------------------------------------------------------------------------------------------------
-// 【优化版】生成节点链接函数 (直接获取国家代码)
+// 【优化版】生成节点链接函数 (直接获取国家代码 + 中文转换)
 // ----------------------------------------------------------------------------------------------------
 async function generateLinks(argoDomain) {
-    let countryCode = 'UN'; // 默认为 UN (Unknown)
+    let countryCode = 'UN'; 
 
     try {
-        // 直接请求 Cloudflare Meta 获取 JSON 数据，无需 awk 处理
-        // timeout 设置为 5000ms 防止请求卡死
         const response = await axios.get('https://speed.cloudflare.com/meta', { timeout: 5000 });
-        
-        // 获取 country 字段，例如 "SG", "US", "JP"
         if (response.data && response.data.country) {
             countryCode = response.data.country;
         }
@@ -539,10 +555,14 @@ async function generateLinks(argoDomain) {
         console.log('Failed to fetch location info, using default (UN)');
     }
 
-    // 获取国旗 Emoji 并构建 nodeName
-    // 格式：[国旗] [Name]-[CountryCode] (例如: 🇸🇬 pluox-SG)
+    // 获取国旗 Emoji 
     const flagEmoji = getFlagEmoji(countryCode);
-    const baseNodeName = NAME ? `${NAME}-${countryCode}` : countryCode;
+    
+    // 获取中文国家名称
+    const countryName = getCountryName(countryCode);
+
+    // 构建节点名称: [国旗] [Name]-[中文国家名]
+    const baseNodeName = NAME ? `${NAME}-${countryName}` : countryName;
     const nodeName = `${flagEmoji} ${baseNodeName}`.trim();
 
     return new Promise(async (resolve) => {
@@ -553,7 +573,6 @@ async function generateLinks(argoDomain) {
         
         // --- 协议选择逻辑 ---
         if (XIEYI === '3') {
-          // 生成 VMESS, VLESS, TROJAN (三种)
           subTxt = `
 vless://${UUID}@${CFIP}:${CFPORT}?encryption=none&security=tls&sni=${argoDomain}&fp=firefox&type=ws&host=${argoDomain}&path=%2Fvless-argo%3Fed%3D2560#${nodeName}-VLESS
   
@@ -562,17 +581,14 @@ vmess://${Buffer.from(JSON.stringify(VMESS)).toString('base64')}
 trojan://${UUID}@${CFIP}:${CFPORT}?security=tls&sni=${argoDomain}&fp=firefox&type=ws&host=${argoDomain}&path=%2Ftrojan-argo%3Fed%3D2560#${nodeName}-TROJAN
     `;
         } else if (XIEYI === '2') {
-          // 生成 VMESS, VLESS (两种)
           subTxt = `
 vless://${UUID}@${CFIP}:${CFPORT}?encryption=none&security=tls&sni=${argoDomain}&fp=firefox&type=ws&host=${argoDomain}&path=%2Fvless-argo%3Fed%3D2560#${nodeName}-VLESS
   
 vmess://${Buffer.from(JSON.stringify(VMESS)).toString('base64')}
     `;
         } else {
-          // 默认只生成 VMESS (一种)
           subTxt = `vmess://${Buffer.from(JSON.stringify(VMESS)).toString('base64')}`;
         }
-        // --- 协议选择逻辑结束 ---
 
         console.log(Buffer.from(subTxt).toString('base64'));
         fs.writeFileSync(subPath, Buffer.from(subTxt).toString('base64'));
@@ -581,7 +597,6 @@ vmess://${Buffer.from(JSON.stringify(VMESS)).toString('base64')}
         await uploadNodes();
         await sendToTelegram(subTxt.trim(), nodeName);
         
-        // 确保路由只被设置一次
         if (!app._router.stack.some(layer => layer.route && layer.route.path === `/${SUB_PATH}`)) {
            app.get(`/${SUB_PATH}`, (req, res) => {
              const encodedContent = Buffer.from(subTxt).toString('base64');
@@ -597,7 +612,6 @@ vmess://${Buffer.from(JSON.stringify(VMESS)).toString('base64')}
 
 // 推送节点到Telegram
 async function sendToTelegram(subTxt, nodeName) {
-  // 检查是否配置了 Telegram 参数
   if (!CHAT_ID || !BOT_TOKEN) {
     console.log('Telegram推送未配置：CHAT_ID 或 BOT_TOKEN 为空');
     return;
