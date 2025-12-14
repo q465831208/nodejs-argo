@@ -1,11 +1,11 @@
 {
   "name": "node",
   "version": "8.8.8",
-  "description": "Thsi is a node project",
+  "description": "This is a node project",
   "main": "index.js",
   "license": "MIT",
-  "private": false,
   "scripts": {
+    "dev": "node index.js",
     "start": "node index.js"
   },
   "dependencies": {
