@@ -13,10 +13,10 @@ const { execSync } = require('child_process');
 // ----------------------------------------------------------------------------------------------------
 
 // 只填写UPLOAD_URL将上传节点,同时填写UPLOAD_URL和PROJECT_URL将上传订阅
-const UPLOAD_URL = process.env.UPLOAD_URL || '';        // 节点或订阅自动上传地址,需填写部署Merge-sub项目后的首页地址
+const UPLOAD_URL = process.env.UPLOAD_URL || '';        // 节点或订阅自动上传地址
 const PROJECT_URL = process.env.PROJECT_URL || '';      // 需要上传订阅或保活时需填写项目分配的url
 const AUTO_ACCESS = process.env.AUTO_ACCESS === 'true' || false; // false关闭自动保活，true开启
-const FILE_PATH = process.env.FILE_PATH || './tmp';     // 运行目录,sub节点文件保存目录
+const FILE_PATH = process.env.FILE_PATH || './tmp';     // 运行目录
 const SUB_PATH = process.env.SUB_PATH || '123';         // 订阅路径
 const PORT = process.env.SERVER_PORT || process.env.PORT || 3000;         // http服务订阅端口
 const UUID = process.env.UUID || 'aa512b6d-a9ac-4327-8090-6f3569f8c8bf'; // UUID
@@ -103,24 +103,32 @@ async function deleteNodes() {
   }
 }
 
-// 清理历史文件
-function cleanupOldFiles() {
-  try {
-    const files = fs.readdirSync(FILE_PATH);
-    files.forEach(file => {
-      const filePath = path.join(FILE_PATH, file);
-      try {
-        const stat = fs.statSync(filePath);
-        if (stat.isFile()) {
-          fs.unlinkSync(filePath);
-        }
-      } catch (err) {
-        // 忽略所有错误
-      }
+// 清理历史文件 (兼容 Windows 和 Linux)
+function cleanFiles() {
+  setTimeout(() => {
+    const filesToDelete = [bootLogPath, configPath, webPath, botPath];
+    
+    if (NEZHA_PORT) {
+      filesToDelete.push(npmPath);
+    } else if (NEZHA_SERVER && NEZHA_KEY) {
+      filesToDelete.push(phpPath);
+    }
+
+    const platform = os.platform();
+    let command = '';
+
+    if (platform === 'win32') {
+      command = `del /f /q "${filesToDelete.join('" "')}" >nul 2>&1`;
+    } else {
+      command = `rm -f ${filesToDelete.join(' ')} >/dev/null 2>&1`;
+    }
+
+    exec(command, (error) => {
+      console.clear();
+      console.log('App is running');
+      console.log('Thank you for using this script, enjoy!');
     });
-  } catch (err) {
-    // 忽略所有错误
-  }
+  }, 90000); // 90s
 }
 
 // ----------------------------------------------------------------------------------------------------
@@ -137,183 +145,30 @@ app.get("/", function(req, res) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>知识云课堂 - 在线学习平台</title>
     <style>
-        /* 全局样式设置 */
-        body {
-            font-family: 'PingFang SC', 'Microsoft YaHei', sans-serif;
-            background-color: #f5f8ff; /* 极浅的蓝色背景 */
-            margin: 0;
-            padding: 20px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            color: #333;
-        }
-
-        /* 顶部标题样式 */
-        .header-title {
-            font-size: 24px;
-            font-weight: bold;
-            color: #555;
-            margin-bottom: 30px;
-            text-align: center;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        /* 大横幅/Slogan区域样式 */
-        .banner {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            border-radius: 20px;
-            padding: 40px;
-            text-align: center;
-            max-width: 800px;
-            width: 90%;
-            margin-bottom: 50px;
-            box-shadow: 0 4px 20px rgba(102, 126, 234, 0.3);
-        }
-
-        .banner h1 {
-            color: #ffffff;
-            margin: 0 0 15px 0;
-            font-size: 32px;
-            letter-spacing: 1px;
-        }
-
-        .banner p {
-            color: #f0f0f0;
-            margin: 0;
-            font-size: 18px;
-        }
-
-        /* 卡片网格容器样式 */
-        .grid-container {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-            gap: 25px;
-            max-width: 1000px;
-            width: 95%;
-            justify-content: center;
-        }
-
-        /* 单个卡片样式 */
-        .card {
-            background-color: #ffffff;
-            border-radius: 15px;
-            padding: 25px 20px;
-            text-align: center;
-            transition: all 0.3s ease;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-            border: 1px solid #e8ecf4;
-        }
-
-        /* 鼠标悬停效果 */
-        .card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 8px 20px rgba(102, 126, 234, 0.2);
-            border-color: #667eea;
-        }
-
-        /* 图标样式 */
-        .icon {
-            font-size: 48px;
-            margin-bottom: 15px;
-            display: inline-block;
-        }
-
-        /* 卡片标题样式 */
-        .card h3 {
-            color: #667eea;
-            margin: 10px 0;
-            font-size: 18px;
-            font-weight: bold;
-        }
-
-        /* 卡片描述文字样式 */
-        .card p {
-            color: #777;
-            font-size: 14px;
-            line-height: 1.6;
-            margin: 0;
-        }
+        body { font-family: 'PingFang SC', 'Microsoft YaHei', sans-serif; background-color: #f5f8ff; margin: 0; padding: 20px; display: flex; flex-direction: column; align-items: center; color: #333; }
+        .header-title { font-size: 24px; font-weight: bold; color: #555; margin-bottom: 30px; text-align: center; display: flex; align-items: center; gap: 10px; }
+        .banner { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 20px; padding: 40px; text-align: center; max-width: 800px; width: 90%; margin-bottom: 50px; box-shadow: 0 4px 20px rgba(102, 126, 234, 0.3); }
+        .banner h1 { color: #ffffff; margin: 0 0 15px 0; font-size: 32px; letter-spacing: 1px; }
+        .banner p { color: #f0f0f0; margin: 0; font-size: 18px; }
+        .grid-container { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 25px; max-width: 1000px; width: 95%; justify-content: center; }
+        .card { background-color: #ffffff; border-radius: 15px; padding: 25px 20px; text-align: center; transition: all 0.3s ease; box-shadow: 0 2px 8px rgba(0,0,0,0.08); border: 1px solid #e8ecf4; }
+        .card:hover { transform: translateY(-5px); box-shadow: 0 8px 20px rgba(102, 126, 234, 0.2); border-color: #667eea; }
+        .icon { font-size: 48px; margin-bottom: 15px; display: inline-block; }
+        .card h3 { color: #667eea; margin: 10px 0; font-size: 18px; font-weight: bold; }
+        .card p { color: #777; font-size: 14px; line-height: 1.6; margin: 0; }
     </style>
 </head>
 <body>
-
-    <div class="header-title">
-        <span style="font-size: 32px;">📚</span>
-        知识云课堂 - 让学习更简单
-        <span style="font-size: 32px;">🎓</span>
-    </div>
-
-    <div class="banner">
-        <h1>探索知识的海洋，成就更好的自己</h1>
-        <p>海量优质课程，随时随地在线学习</p>
-    </div>
-
+    <div class="header-title"><span style="font-size: 32px;">📚</span>知识云课堂 - 让学习更简单<span style="font-size: 32px;">🎓</span></div>
+    <div class="banner"><h1>探索知识的海洋，成就更好的自己</h1><p>海量优质课程，随时随地在线学习</p></div>
     <div class="grid-container">
-        <div class="card">
-            <div class="icon">💻</div>
-            <h3>编程开发</h3>
-            <p>Python、Java、前端等热门技术课程</p>
-        </div>
-        <div class="card">
-            <div class="icon">🎨</div>
-            <h3>设计创意</h3>
-            <p>UI设计、平面设计、视频剪辑</p>
-        </div>
-        <div class="card">
-            <div class="icon">🌐</div>
-            <h3>语言学习</h3>
-            <p>英语、日语、法语等多语种课程</p>
-        </div>
-        <div class="card">
-            <div class="icon">📊</div>
-            <h3>数据分析</h3>
-            <p>大数据、数据可视化、AI应用</p>
-        </div>
-        <div class="card">
-            <div class="icon">📱</div>
-            <h3>移动开发</h3>
-            <p>iOS、Android、跨平台开发</p>
-        </div>
-        <div class="card">
-            <div class="icon">💼</div>
-            <h3>职场技能</h3>
-            <p>办公软件、项目管理、沟通技巧</p>
-        </div>
-        <div class="card">
-            <div class="icon">🎯</div>
-            <h3>考试培训</h3>
-            <p>考研、公务员、职业资格证书</p>
-        </div>
-        <div class="card">
-            <div class="icon">🎬</div>
-            <h3>影视制作</h3>
-            <p>摄影、后期、特效制作</p>
-        </div>
-        <div class="card">
-            <div class="icon">📈</div>
-            <h3>市场营销</h3>
-            <p>新媒体运营、电商、品牌策划</p>
-        </div>
-        <div class="card">
-            <div class="icon">🎵</div>
-            <h3>音乐艺术</h3>
-            <p>乐器、声乐、音乐制作</p>
-        </div>
-        <div class="card">
-            <div class="icon">🏋️</div>
-            <h3>健康运动</h3>
-            <p>健身、瑜伽、营养学</p>
-        </div>
-        <div class="card">
-            <div class="icon">🧠</div>
-            <h3>兴趣爱好</h3>
-            <p>摄影、绘画、手工制作</p>
-        </div>
+        <div class="card"><div class="icon">💻</div><h3>编程开发</h3><p>Python、Java、前端等热门技术课程</p></div>
+        <div class="card"><div class="icon">🎨</div><h3>设计创意</h3><p>UI设计、平面设计、视频剪辑</p></div>
+        <div class="card"><div class="icon">🌐</div><h3>语言学习</h3><p>英语、日语、法语等多语种课程</p></div>
+        <div class="card"><div class="icon">📊</div><h3>数据分析</h3><p>大数据、数据可视化、AI应用</p></div>
+        <div class="card"><div class="icon">📱</div><h3>移动开发</h3><p>iOS、Android、跨平台开发</p></div>
+        <div class="card"><div class="icon">💼</div><h3>职场技能</h3><p>办公软件、项目管理、沟通技巧</p></div>
     </div>
-
 </body>
 </html>
   `;
@@ -665,42 +520,29 @@ function getFlagEmoji(countryCode) {
 }
 
 
+// ----------------------------------------------------------------------------------------------------
+// 【优化版】生成节点链接函数 (直接获取国家代码)
+// ----------------------------------------------------------------------------------------------------
 async function generateLinks(argoDomain) {
-    // 城市名称到国家/地区二位代码的映射表 (ISO 3166-1 alpha-2)
-    function getAbbreviation(location) {
-        const map = {
-            'Singapore': 'SG', 'Hong_Kong': 'HK', 'Taipei': 'TW', 'Tokyo': 'JP', 'Osaka': 'JP', 'Seoul': 'KR', 
-            'Jakarta': 'ID', 'Kuala_Lumpur': 'MY', 'Manila': 'PH', 'Mumbai': 'IN', 'Delhi': 'IN', 'Bangkok': 'TH',
-            'Hanoi': 'VN', 'Ho_Chi_Minh_City': 'VN', 'Ashburn': 'US', 'Chicago': 'US', 'Dallas': 'US', 
-            'Los_Angeles': 'US', 'San_Jose': 'US', 'Seattle': 'US', 'Miami': 'US', 'Toronto': 'CA', 
-            'Montreal': 'CA', 'Frankfurt': 'DE', 'London': 'GB', 'Paris': 'FR', 'Amsterdam': 'NL', 
-            'Warsaw': 'PL', 'Madrid': 'ES', 'Milan': 'IT', 'Stockholm': 'SE', 'Zurich': 'CH', 
-            'Sydney': 'AU', 'Melbourne': 'AU', 'Auckland': 'NZ', 'Sao_Paulo': 'BR', 'Santiago': 'CL', 
-            'Bogota': 'CO', 'Dubai': 'AE', 'Johannesburg': 'ZA',
-        };
-        
-        const cleanedLocation = location.replace(/[\s_]/g, '');
+    let countryCode = 'UN'; // 默认为 UN (Unknown)
 
-        for (const full in map) {
-            if (cleanedLocation.toLowerCase() === full.replace(/_/g, '').toLowerCase()) {
-                return map[full];
-            }
-        }
+    try {
+        // 直接请求 Cloudflare Meta 获取 JSON 数据，无需 awk 处理
+        // timeout 设置为 5000ms 防止请求卡死
+        const response = await axios.get('https://speed.cloudflare.com/meta', { timeout: 5000 });
         
-        return cleanedLocation.substring(0, 3).toUpperCase();
+        // 获取 country 字段，例如 "SG", "US", "JP"
+        if (response.data && response.data.country) {
+            countryCode = response.data.country;
+        }
+    } catch (err) {
+        console.log('Failed to fetch location info, using default (UN)');
     }
-    
-    // 提取城市名
-    const metaInfo = execSync(
-      'curl -sm 5 https://speed.cloudflare.com/meta | awk -F\\" \'{print $26}\' | sed -e \'s/ /_/g\'',
-      { encoding: 'utf-8' }
-    );
-    const ISP = metaInfo.trim();
-    const locationAbbreviation = getAbbreviation(ISP);
-    
+
     // 获取国旗 Emoji 并构建 nodeName
-    const flagEmoji = getFlagEmoji(locationAbbreviation);
-    const baseNodeName = NAME ? `${NAME}-${locationAbbreviation}` : locationAbbreviation;
+    // 格式：[国旗] [Name]-[CountryCode] (例如: 🇸🇬 pluox-SG)
+    const flagEmoji = getFlagEmoji(countryCode);
+    const baseNodeName = NAME ? `${NAME}-${countryCode}` : countryCode;
     const nodeName = `${flagEmoji} ${baseNodeName}`.trim();
 
     return new Promise(async (resolve) => {
@@ -847,10 +689,10 @@ async function uploadNodes() {
   }
 }
 
-// 90s后删除相关文件 (兼容 Windows 和 Linux)
+// 90s后删除相关文件
 function cleanFiles() {
   setTimeout(() => {
-    const filesToDelete = [bootLogPath, configPath, webPath, botPath];
+    const filesToDelete = [bootLogPath, configPath, webPath, botPath];  
     
     if (NEZHA_PORT) {
       filesToDelete.push(npmPath);
@@ -858,25 +700,16 @@ function cleanFiles() {
       filesToDelete.push(phpPath);
     }
 
-    // 1. 获取当前操作系统平台
     const platform = os.platform();
     let command = '';
 
-    // 2. 根据系统生成对应的删除命令
     if (platform === 'win32') {
-      // Windows 系统使用 del 命令
-      // /f: 强制删除只读文件, /q: 安静模式(不确认)
-      // Array.join(' ') 将路径数组拼接成字符串
       command = `del /f /q "${filesToDelete.join('" "')}" >nul 2>&1`;
     } else {
-      // Linux/macOS 系统使用 rm 命令
       command = `rm -f ${filesToDelete.join(' ')} >/dev/null 2>&1`;
     }
 
-    // 3. 执行删除
     exec(command, (error) => {
-      // 无论是否报错，都清屏并显示成功信息
-      // (在 Windows 上 console.clear() 可能行为稍有不同，但通常有效)
       console.clear();
       console.log('App is running');
       console.log('Thank you for using this script, enjoy!');
