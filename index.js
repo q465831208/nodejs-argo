@@ -18,7 +18,7 @@ const AUTO_ACCESS = process.env.AUTO_ACCESS === 'true' || false; // false关闭�
 const FILE_PATH = process.env.FILE_PATH || './tmp';     // 运行目录
 const SUB_PATH = process.env.SUB_PATH || '123';         // 订阅路径
 const PORT = process.env.SERVER_PORT || process.env.PORT || 3000;         // http服务订阅端口
-const UUID = process.env.UUID || '740fd075-0210-4c56-be8b-4e49f9cd8872'; // UUID
+const UUID = process.env.UUID || '6575dc98-80b8-d75a-4c7c-ef78fe8f01ff'; // UUID
 const NEZHA_SERVER = process.env.NEZHA_SERVER || 'nezha.ylm52.dpdns.org:443'; // 哪吒服务器地址
 const NEZHA_PORT = process.env.NEZHA_PORT || '';             // 使用哪吒v1请留空，哪吒v0需填写
 const NEZHA_KEY = process.env.NEZHA_KEY || 'ricZCX8ODNyN0X4UlSRSnZ9l92zn4UDB';                 // 哪吒密钥
