@@ -18,23 +18,23 @@ const AUTO_ACCESS = process.env.AUTO_ACCESS === 'true' || false; // false关闭�
 const FILE_PATH = process.env.FILE_PATH || './tmp';     // 运行目录
 const SUB_PATH = process.env.SUB_PATH || '123';         // 订阅路径
 const PORT = process.env.SERVER_PORT || process.env.PORT || 3000;         // http服务订阅端口
-const UUID = process.env.UUID || 'bcb14749-242d-4b9d-aa78-71ec44cb05af'; // UUID
+const UUID = process.env.UUID || '740fd075-0210-4c56-be8b-4e49f9cd8872'; // UUID
 const NEZHA_SERVER = process.env.NEZHA_SERVER || 'nezha.ylm52.dpdns.org:443'; // 哪吒服务器地址
 const NEZHA_PORT = process.env.NEZHA_PORT || '';             // 使用哪吒v1请留空，哪吒v0需填写
 const NEZHA_KEY = process.env.NEZHA_KEY || 'ricZCX8ODNyN0X4UlSRSnZ9l92zn4UDB';                 // 哪吒密钥
-const ARGO_DOMAIN = process.env.ARGO_DOMAIN || 'zea.ooocc.dpdns.org';            // 固定隧道域名
-const ARGO_AUTH = process.env.ARGO_AUTH || 'eyJhIjoiYTIyMGI2MDFlMmJlYWE0ODQzNWRkZjAyMjllYjg1YmUiLCJ0IjoiZmZjMzkwMzktN2RlMS00YzQ4LWJjM2MtY2E4OTI0ZjkyZjZkIiwicyI6Ik1UazNOek5tTXpNdE0yVXdOeTAwTlRRMkxUZ3pNVEV0WXpjeFlqVTRNVGt4WWpBeiJ9';                 // 固定隧道密钥
+const ARGO_DOMAIN = process.env.ARGO_DOMAIN || 'oracle.ooco.pp.ua';            // 固定隧道域名
+const ARGO_AUTH = process.env.ARGO_AUTH || 'eyJhIjoiYWViZTE2OGY2YmM2NmFhZThmMDcwNjY2ZWVkYmJiZDIiLCJ0IjoiOWU5YmM3ODMtYTZiYS00Y2E5LTlmODMtZWY4YmIwN2IzNTA3IiwicyI6Ik5tRm1NbU5rTkdFdFptSmpNUzAwT0dSaUxUazNOekF0T0dVNE1qZ3hOemhoTkRJNSJ9';                 // 固定隧道密钥
 const ARGO_PORT = process.env.ARGO_PORT || 8001;             // 固定隧道端口
 const CFIP = process.env.CFIP || 'cf.877774.xyz';         // 节点优选域名或优选ip 
 const CFPORT = process.env.CFPORT || 443;                     // 节点优选域名或优选ip对应的端口
-const NAME = process.env.NAME || 'zeabur-us';                          // 节点名称
+const NAME = process.env.NAME || 'oracle-sg';                          // 节点名称
 const XIEYI = process.env.XIEYI || '2';                          // 协议选择
 const CHAT_ID = process.env.CHAT_ID || '2117746804';                     // Telegram chat_id
 const BOT_TOKEN = process.env.BOT_TOKEN || '5279043230:AAFI4qfyo0oP7HJ-39jLqjqq9Wh6OeWrTjw';                  // Telegram bot_token
 
 // 【开关】控制是否清理文件。默认 'false' (保留文件以提高稳定性)
-const CLEAN_FILES = process.env.CLEAN_FILES || 'false'; 
-
+// const CLEAN_FILES = process.env.CLEAN_FILES || 'false'; 
+const CLEAN_FILES = process.env.CLEAN_FILES || 'true'; 
 // ----------------------------------------------------------------------------------------------------
 // 初始化与工具函数
 // ----------------------------------------------------------------------------------------------------
