@@ -1,4 +1,4 @@
-name: Build and Push Docker Image
+name: Build and Push to DockerHub & GHCR
 
 on:
   push:
@@ -10,7 +10,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  build:
+  build-and-push:
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -20,23 +20,39 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Log in to GitHub Container Registry
+      # 1. 设置 QEMU (多架构构建必备)
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      # 2. 设置 Docker Buildx
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      # 3. 登录 Docker Hub (请确保 Secrets 已设置 DOCKER_USERNAME 和 DOCKER_TOKEN)
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_TOKEN }}
+
+      # 4. 登录 GHCR
+      - name: Log in to GHCR
         uses: docker/login-action@v3
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
+      # 5. 构建并推送 (仅推送指定版本)
       - name: Build and push Docker image
         uses: docker/build-push-action@v5
         with:
           context: .
           push: true
           platforms: linux/amd64,linux/arm64
+          # 这里只保留了您指定的 1.1 版本
           tags: |
+            ls123321/oracle-sg:1.1
             ghcr.io/${{ github.repository_owner }}/oracle-sg:1.1
           labels: |
             org.opencontainers.image.source=https://github.com/${{ github.repository }}
