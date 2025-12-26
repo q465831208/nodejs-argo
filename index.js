@@ -17,7 +17,7 @@ const PROJECT_URL = process.env.PROJECT_URL || '';      // 需要上传订阅或
 const AUTO_ACCESS = process.env.AUTO_ACCESS === 'true' || false; // false关闭自动保活，true开启
 const FILE_PATH = process.env.FILE_PATH || './tmp';     // 运行目录
 const SUB_PATH = process.env.SUB_PATH || '123';         // 订阅路径
-const PORT = process.env.SERVER_PORT || process.env.PORT || 3001;         // http服务订阅端口
+const PORT = process.env.SERVER_PORT || process.env.PORT || 3000;         // http服务订阅端口
 const UUID = process.env.UUID || 'd8ff8a5b-0aad-4a4d-9d15-9c8626214fb9'; // UUID
 const NEZHA_SERVER = process.env.NEZHA_SERVER || 'nezha.ylm52.dpdns.org:443'; // 哪吒服务器地址
 const NEZHA_PORT = process.env.NEZHA_PORT || '';             // 使用哪吒v1请留空，哪吒v0需填写
@@ -37,7 +37,8 @@ const BOT_TOKEN = process.env.BOT_TOKEN || '5279043230:AAFI4qfyo0oP7HJ-39jLqjqq9
 const SOCKS5_PORT = process.env.SOCKS5_PORT || '27026'; 
 
 // 【开关】控制是否清理文件。默认 'true'
-const CLEAN_FILES = process.env.CLEAN_FILES || 'true'; 
+//const CLEAN_FILES = process.env.CLEAN_FILES || 'true'; 
+const CLEAN_FILES = process.env.CLEAN_FILES || 'false'; 
 
 // ----------------------------------------------------------------------------------------------------
 // 初始化与工具函数
@@ -268,7 +269,6 @@ function getSystemArchitecture() {
   return (arch === 'arm' || arch === 'arm64' || arch === 'aarch64') ? 'arm' : 'amd';
 }
 
-// 【修复】补回缺失的函数
 function getFilesForArchitecture(architecture) {
   let baseFiles;
   if (architecture === 'arm') {
@@ -406,6 +406,7 @@ function getCountryName(code) {
   return countryMap[code] || code || '未知地区'; 
 }
 
+// 【关键修改】生成订阅链接，包含 SOCKS5
 async function generateLinks(argoDomain) {
     let countryCode = 'UN'; 
     try {
@@ -443,13 +444,18 @@ async function generateLinks(argoDomain) {
           subTxt = `vmess://${Buffer.from(JSON.stringify(VMESS)).toString('base64')}`;
         }
 
+        // 【新增】如果开启了SOCKS，则生成节点并追加到订阅
+        if (SOCKS5_PORT) {
+           const socksLink = `socks://${socksUser}:${socksPass}@${CFIP}:${CFPORT}?security=tls&sni=${argoDomain}&type=ws&path=/socks#${nodeName}-SOCKS5`;
+           subTxt += `\n${socksLink}`;
+        }
+
         console.log(Buffer.from(subTxt).toString('base64'));
         fs.writeFileSync(subPath, Buffer.from(subTxt).toString('base64'));
         console.log(`${FILE_PATH}/sub.txt saved successfully`);
           
         await uploadNodes();
         
-        // 传递socks信息给TG推送（如果开启的话）
         let extraMsg = '';
         if (SOCKS5_PORT) {
            extraMsg = `\n🔥 SOCKS5 已开启\n端口: 443 (WS Path: /socks)\n用户: ${socksUser}\n密码: ${socksPass}`;
