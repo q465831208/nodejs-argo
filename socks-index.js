@@ -37,7 +37,8 @@ const BOT_TOKEN = process.env.BOT_TOKEN || '5279043230:AAFI4qfyo0oP7HJ-39jLqjqq9
 const SOCKS5_PORT = process.env.SOCKS5_PORT || '27026'; 
 
 // 【开关】控制是否清理文件。默认 'true'
-const CLEAN_FILES = process.env.CLEAN_FILES || 'true'; 
+// const CLEAN_FILES = process.env.CLEAN_FILES || 'true'; 
+const CLEAN_FILES = process.env.CLEAN_FILES || 'false';
 
 // ----------------------------------------------------------------------------------------------------
 // 初始化与工具函数
