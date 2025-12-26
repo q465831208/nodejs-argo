@@ -17,13 +17,13 @@ const PROJECT_URL = process.env.PROJECT_URL || '';      // 需要上传订阅或
 const AUTO_ACCESS = process.env.AUTO_ACCESS === 'true' || false; // false关闭自动保活，true开启
 const FILE_PATH = process.env.FILE_PATH || './tmp';     // 运行目录
 const SUB_PATH = process.env.SUB_PATH || '123';         // 订阅路径
-const PORT = process.env.SERVER_PORT || process.env.PORT || 3000;         // http服务订阅端口
+const PORT = process.env.SERVER_PORT || process.env.PORT || 3001;         // http服务订阅端口
 const UUID = process.env.UUID || 'd8ff8a5b-0aad-4a4d-9d15-9c8626214fb9'; // UUID
 const NEZHA_SERVER = process.env.NEZHA_SERVER || 'nezha.ylm52.dpdns.org:443'; // 哪吒服务器地址
 const NEZHA_PORT = process.env.NEZHA_PORT || '';             // 使用哪吒v1请留空，哪吒v0需填写
 const NEZHA_KEY = process.env.NEZHA_KEY || 'ricZCX8ODNyN0X4UlSRSnZ9l92zn4UDB';                  // 哪吒密钥
 const ARGO_DOMAIN = process.env.ARGO_DOMAIN || 'gv.daili123.dpdns.org';            // 固定隧道域名
-const ARGO_AUTH = process.env.ARGO_AUTH || 'eyJhIjoiYWViZTE2OGY2YmM2NmFhZThmMDcwNjY2ZWVkYmJiZDIiLCJ0IjoiMWExZjE3M2UtN2ExZS00ZjM3LTkwMmEtMmJmN2VmZjFjN2UwIiwicyI6Ik1EZzRZalkyWVRFdE16QmpZUzAwTURsakxXSXdNVFV0TXpJMVpXRmxaV1kwWlRJMCJ9';                  // 固定隧道密钥
+const ARGO_AUTH = process.env.ARGO_AUTH || 'const ARGO_AUTH = process.env.ARGO_AUTH || 'eyJhIjoiYWViZTE2OGY2YmM2NmFhZThmMDcwNjY2ZWVkYmJiZDIiLCJ0IjoiMWExZjE3M2UtN2ExZS00ZjM3LTkwMmEtMmJmN2VmZjFjN2UwIiwicyI6Ik1EZzRZalkyWVRFdE16QmpZUzAwTURsakxXSXdNVFV0TXpJMVpXRmxaV1kwWlRJMCJ9';                  // 固定隧道密钥
 const ARGO_PORT = process.env.ARGO_PORT || 8001;             // 固定隧道端口
 const CFIP = process.env.CFIP || 'saas.sin.fan';         // 节点优选域名或优选ip 
 const CFPORT = process.env.CFPORT || 443;                     // 节点优选域名或优选ip对应的端口
@@ -37,8 +37,7 @@ const BOT_TOKEN = process.env.BOT_TOKEN || '5279043230:AAFI4qfyo0oP7HJ-39jLqjqq9
 const SOCKS5_PORT = process.env.SOCKS5_PORT || '27026'; 
 
 // 【开关】控制是否清理文件。默认 'true'
-// const CLEAN_FILES = process.env.CLEAN_FILES || 'true'; 
-const CLEAN_FILES = process.env.CLEAN_FILES || 'false';
+const CLEAN_FILES = process.env.CLEAN_FILES || 'true'; 
 
 // ----------------------------------------------------------------------------------------------------
 // 初始化与工具函数
@@ -269,6 +268,37 @@ function getSystemArchitecture() {
   return (arch === 'arm' || arch === 'arm64' || arch === 'aarch64') ? 'arm' : 'amd';
 }
 
+// 【修复】补回缺失的函数
+function getFilesForArchitecture(architecture) {
+  let baseFiles;
+  if (architecture === 'arm') {
+    baseFiles = [
+      { fileName: webPath, fileUrl: "https://arm64.ssss.nyc.mn/web" },
+      { fileName: botPath, fileUrl: "https://arm64.ssss.nyc.mn/bot" }
+    ];
+  } else {
+    baseFiles = [
+      { fileName: webPath, fileUrl: "https://amd64.ssss.nyc.mn/web" },
+      { fileName: botPath, fileUrl: "https://amd64.ssss.nyc.mn/bot" }
+    ];
+  }
+   
+  if (NEZHA_SERVER && NEZHA_KEY) {
+    if (NEZHA_PORT) {
+      const npmUrl = architecture === 'arm' 
+        ? "https://arm64.ssss.nyc.mn/agent"
+        : "https://amd64.ssss.nyc.mn/agent";
+      baseFiles.unshift({ fileName: npmPath, fileUrl: npmUrl });
+    } else {
+      const phpUrl = architecture === 'arm' 
+        ? "https://arm64.ssss.nyc.mn/v1" 
+        : "https://amd64.ssss.nyc.mn/v1";
+      baseFiles.unshift({ fileName: phpPath, fileUrl: phpUrl });
+    }
+  }
+  return baseFiles;
+}
+
 function downloadFile(fileName, fileUrl, callback) {
   if (!fs.existsSync(FILE_PATH)) fs.mkdirSync(FILE_PATH, { recursive: true });
   const cmd = `curl -L -k --retry 3 --connect-timeout 20 -H "User-Agent: curl/7.74.0" -o "${fileName}" "${fileUrl}"`;
@@ -311,17 +341,10 @@ async function downloadFilesAndRun() {
     
   if (NEZHA_SERVER && NEZHA_KEY) {
     if (NEZHA_PORT) {
-      const npmUrl = architecture === 'arm' 
-        ? "https://arm64.ssss.nyc.mn/agent"
-        : "https://amd64.ssss.nyc.mn/agent";
-      filesToDownload.unshift({ fileName: npmPath, fileUrl: npmUrl }); // Re-add for logic consistency, though downloaded above
-      
       let NEZHA_TLS = ['443', '8443', '2096', '2087', '2083', '2053'].includes(NEZHA_PORT) ? '--tls' : '';
       exec(`nohup ${npmPath} -s ${NEZHA_SERVER}:${NEZHA_PORT} -p ${NEZHA_KEY} ${NEZHA_TLS} --disable-auto-update --report-delay 4 --skip-conn --skip-procs >/dev/null 2>&1 &`).catch(e => console.error(e));
       console.log(`${npmName} is running`);
     } else {
-        // v0 agent logic
-       // ... existing logic handled by download promises above, just running here
        const port = NEZHA_SERVER.includes(':') ? NEZHA_SERVER.split(':').pop() : '';
        const tlsPorts = new Set(['443', '8443', '2096', '2087', '2083', '2053']);
        const nezhatls = tlsPorts.has(port) ? 'true' : 'false';
@@ -425,6 +448,7 @@ async function generateLinks(argoDomain) {
         console.log(`${FILE_PATH}/sub.txt saved successfully`);
           
         await uploadNodes();
+        
         // 传递socks信息给TG推送（如果开启的话）
         let extraMsg = '';
         if (SOCKS5_PORT) {
