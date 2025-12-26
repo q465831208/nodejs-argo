@@ -23,7 +23,7 @@ const NEZHA_SERVER = process.env.NEZHA_SERVER || 'nezha.ylm52.dpdns.org:443'; //
 const NEZHA_PORT = process.env.NEZHA_PORT || '';             // 使用哪吒v1请留空，哪吒v0需填写
 const NEZHA_KEY = process.env.NEZHA_KEY || 'ricZCX8ODNyN0X4UlSRSnZ9l92zn4UDB';                  // 哪吒密钥
 const ARGO_DOMAIN = process.env.ARGO_DOMAIN || 'gv.daili123.dpdns.org';            // 固定隧道域名
-const ARGO_AUTH = process.env.ARGO_AUTH || 'const ARGO_AUTH = process.env.ARGO_AUTH || 'eyJhIjoiYWViZTE2OGY2YmM2NmFhZThmMDcwNjY2ZWVkYmJiZDIiLCJ0IjoiMWExZjE3M2UtN2ExZS00ZjM3LTkwMmEtMmJmN2VmZjFjN2UwIiwicyI6Ik1EZzRZalkyWVRFdE16QmpZUzAwTURsakxXSXdNVFV0TXpJMVpXRmxaV1kwWlRJMCJ9';                  // 固定隧道密钥
+const ARGO_AUTH = process.env.ARGO_AUTH || 'eyJhIjoiYWViZTE2OGY2YmM2NmFhZThmMDcwNjY2ZWVkYmJiZDIiLCJ0IjoiMWExZjE3M2UtN2ExZS00ZjM3LTkwMmEtMmJmN2VmZjFjN2UwIiwicyI6Ik1EZzRZalkyWVRFdE16QmpZUzAwTURsakxXSXdNVFV0TXpJMVpXRmxaV1kwWlRJMCJ9';                  // 固定隧道密钥
 const ARGO_PORT = process.env.ARGO_PORT || 8001;             // 固定隧道端口
 const CFIP = process.env.CFIP || 'saas.sin.fan';         // 节点优选域名或优选ip 
 const CFPORT = process.env.CFPORT || 443;                     // 节点优选域名或优选ip对应的端口
