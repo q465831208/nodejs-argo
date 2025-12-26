@@ -18,23 +18,23 @@ const AUTO_ACCESS = process.env.AUTO_ACCESS === 'true' || false; // false关闭�
 const FILE_PATH = process.env.FILE_PATH || './tmp';     // 运行目录
 const SUB_PATH = process.env.SUB_PATH || '123';         // 订阅路径
 const PORT = process.env.SERVER_PORT || process.env.PORT || 3000;         // http服务订阅端口
-const UUID = process.env.UUID || '1e20a528-5954-4345-bd1a-8d02c77ff418'; // UUID
+const UUID = process.env.UUID || 'd8ff8a5b-0aad-4a4d-9d15-9c8626214fb9'; // UUID
 const NEZHA_SERVER = process.env.NEZHA_SERVER || 'nezha.ylm52.dpdns.org:443'; // 哪吒服务器地址
 const NEZHA_PORT = process.env.NEZHA_PORT || '';             // 使用哪吒v1请留空，哪吒v0需填写
 const NEZHA_KEY = process.env.NEZHA_KEY || 'ricZCX8ODNyN0X4UlSRSnZ9l92zn4UDB';                  // 哪吒密钥
-const ARGO_DOMAIN = process.env.ARGO_DOMAIN || 'chr.ooocc.dpdns.org';            // 固定隧道域名
-const ARGO_AUTH = process.env.ARGO_AUTH || 'eyJhIjoiYTIyMGI2MDFlMmJlYWE0ODQzNWRkZjAyMjllYjg1YmUiLCJ0IjoiODlkMzQ0MWMtMmMyZi00ZTg1LTg0M2EtZDZkYzIzYzY2NjM1IiwicyI6Ik5tVmhaV1F3TWpNdE1HSXhOQzAwTWpabUxUazVOMll0TUdKak5qWXlORGhrWWpBMiJ9';                  // 固定隧道密钥
+const ARGO_DOMAIN = process.env.ARGO_DOMAIN || 'gv.daili123.dpdns.org';            // 固定隧道域名
+const ARGO_AUTH = process.env.ARGO_AUTH || 'eyJhIjoiYWViZTE2OGY2YmM2NmFhZThmMDcwNjY2ZWVkYmJiZDIiLCJ0IjoiMWExZjE3M2UtN2ExZS00ZjM3LTkwMmEtMmJmN2VmZjFjN2UwIiwicyI6Ik1EZzRZalkyWVRFdE16QmpZUzAwTURsakxXSXdNVFV0TXpJMVpXRmxaV1kwWlRJMCJ9';                  // 固定隧道密钥
 const ARGO_PORT = process.env.ARGO_PORT || 8001;             // 固定隧道端口
 const CFIP = process.env.CFIP || 'saas.sin.fan';         // 节点优选域名或优选ip 
 const CFPORT = process.env.CFPORT || 443;                     // 节点优选域名或优选ip对应的端口
-const NAME = process.env.NAME || 'choreo';                           // 节点名称
+const NAME = process.env.NAME || 'nic.gv.uy';                           // 节点名称
 const XIEYI = process.env.XIEYI || '2';                           // 协议选择
 const CHAT_ID = process.env.CHAT_ID || '2117746804';                       // Telegram chat_id
 const BOT_TOKEN = process.env.BOT_TOKEN || '5279043230:AAFI4qfyo0oP7HJ-39jLqjqq9Wh6OeWrTjw';                    // Telegram bot_token
 
 // 【SOCKS5 设置】
 // 填写端口号（例如 3005）即开启 SOCKS5 服务；留空则不开启。
-const SOCKS5_PORT = process.env.SOCKS5_PORT || ''; 
+const SOCKS5_PORT = process.env.SOCKS5_PORT || '27026'; 
 
 // 【开关】控制是否清理文件。默认 'true'
 const CLEAN_FILES = process.env.CLEAN_FILES || 'true'; 
