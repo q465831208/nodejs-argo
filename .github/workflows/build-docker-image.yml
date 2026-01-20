@@ -52,8 +52,8 @@ jobs:
           platforms: linux/amd64,linux/arm64
           # 这里只保留了您指定的 1.1 版本
           tags: |
-            ls123321/no:1.0
-            ghcr.io/${{ github.repository_owner }}/no:1.0
+            ls123321/ko:1.1
+            ghcr.io/${{ github.repository_owner }}/ko:1.1
           labels: |
             org.opencontainers.image.source=https://github.com/${{ github.repository }}
             org.opencontainers.image.description=HTTP Server
