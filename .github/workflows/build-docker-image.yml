@@ -52,8 +52,8 @@ jobs:
           platforms: linux/amd64,linux/arm64
           # 这里只保留了您指定的 1.1 版本
           tags: |
-            ls123321/oc-usa:latest
-            ghcr.io/${{ github.repository_owner }}/oc-usa:latest
+            ls123321/oracle-usa:latest
+            ghcr.io/${{ github.repository_owner }}/oracle-usa:latest
           labels: |
             org.opencontainers.image.source=https://github.com/${{ github.repository }}
             org.opencontainers.image.description=HTTP Server
